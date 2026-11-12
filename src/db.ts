@@ -18,9 +18,12 @@ export const deleteWorkout = async (id: string) => (await dbp).delete('workouts'
 
 export async function loadSettings(): Promise<Settings> {
   const stored: Partial<Settings> | undefined = await (await dbp).get('kv', 'settings');
+  const migrated = stored && !stored.version && stored.restSuccessSec === 180 ? { restSuccessSec: 120 } : {};
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
+    ...migrated,
+    version: 2,
     startWeights: { ...DEFAULT_SETTINGS.startWeights, ...stored?.startWeights },
     increments: { ...DEFAULT_SETTINGS.increments, ...stored?.increments },
   };

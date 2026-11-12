@@ -26,6 +26,7 @@ export interface LiftEntry {
 export interface Rest {
   startedAt: number;
   durationSec: number;
+  extendedSec?: number;
 }
 
 export interface Workout {
@@ -45,10 +46,12 @@ export interface Settings {
   barWeight: number;
   plates: number[];
   restSuccessSec: number;
+  restHardSec: number;
   restFailSec: number;
   deloadPercent: number;
   failuresBeforeDeload: number;
   lastExportAt?: number;
+  version?: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -56,10 +59,12 @@ export const DEFAULT_SETTINGS: Settings = {
   increments: { squat: 2.5, bench: 2.5, row: 2.5, ohp: 2.5, deadlift: 5 },
   barWeight: 20,
   plates: [25, 20, 15, 10, 5, 2.5, 1.25],
-  restSuccessSec: 180,
+  restSuccessSec: 120,
+  restHardSec: 180,
   restFailSec: 300,
   deloadPercent: 10,
   failuresBeforeDeload: 3,
+  version: 2,
 };
 
 export const isSkipped = (e: LiftEntry) => e.sets.every((s) => s === null);
@@ -127,16 +132,41 @@ export interface WarmupSet {
   reps: number;
 }
 
+export const FLOOR_START: Partial<Record<LiftId, number>> = { row: 30, deadlift: 40 };
+export const MAX_WARMUP_JUMP = 20;
+
 export function warmups(lift: LiftId, weight: number, bar: number): WarmupSet[] {
-  if (weight <= bar) return [];
-  const steps: WarmupSet[] = lift === 'deadlift' ? [] : [{ weight: bar, reps: 5 }, { weight: bar, reps: 5 }];
-  const ramps: [number, number][] = lift === 'deadlift' ? [[0.4, 5], [0.6, 3], [0.8, 2]] : [[0.55, 5], [0.7, 3], [0.85, 2]];
-  for (const [pct, reps] of ramps) {
-    const w = roundDown(weight * pct);
-    const prev = steps[steps.length - 1]?.weight ?? 0;
-    if (w >= bar && w > prev && w < weight) steps.push({ weight: w, reps });
+  const floor = FLOOR_START[lift];
+  const start = floor === undefined ? bar : Math.max(floor, bar);
+  if (weight <= start) return [];
+  const sets: WarmupSet[] = floor === undefined ? [{ weight: bar, reps: 5 }, { weight: bar, reps: 5 }] : [{ weight: start, reps: 5 }];
+  const jumps = Math.ceil((weight - start) / MAX_WARMUP_JUMP - 1e-9);
+  for (let i = 1; i < jumps; i++) {
+    const w = roundDown(start + ((weight - start) * i) / jumps);
+    if (w > sets[sets.length - 1].weight && w < weight) sets.push({ weight: w, reps: 5 });
   }
-  return steps;
+  return sets;
+}
+
+export const SET_SEC = 30;
+export const WARMUP_SET_SEC = 60;
+export const BEFORE_WORK_SEC = 60;
+
+export function estimateLiftSec(lift: LiftId, weight: number, settings: Settings): number {
+  const w = warmups(lift, weight, settings.barWeight).length;
+  const { sets } = LIFTS[lift];
+  return w * WARMUP_SET_SEC + (w > 0 ? BEFORE_WORK_SEC : 0) + sets * SET_SEC + (sets - 1) * settings.restSuccessSec;
+}
+
+export function estimateWorkoutSec(type: WorkoutType, finishedNewestFirst: Workout[], settings: Settings): number {
+  return WORKOUTS[type].reduce((sum, lift) => sum + estimateLiftSec(lift, nextWeight(lift, finishedNewestFirst, settings).weight, settings), 0);
+}
+
+export function restAfterSet(entry: LiftEntry, completedReps: number, settings: Settings, now: number): Rest | undefined {
+  if (entry.sets.every((s) => s !== null)) return undefined;
+  return completedReps >= entry.reps
+    ? { startedAt: now, durationSec: settings.restSuccessSec, extendedSec: settings.restHardSec }
+    : { startedAt: now, durationSec: settings.restFailSec };
 }
 
 export function platesPerSide(weight: number, bar: number, plates: number[]): { plates: number[]; remainder: number } {

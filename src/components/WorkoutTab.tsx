@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Store } from '../app';
-import { LIFTS, WORKOUTS, WorkoutType, fmtKg, nextWeight, nextWorkoutType } from '../program';
+import { LIFTS, Rest, WORKOUTS, WorkoutType, estimateWorkoutSec, fmtKg, nextWeight, nextWorkoutType } from '../program';
 import { WorkoutEditor } from './WorkoutEditor';
 import { alertRestDone, keepScreenOn } from '../device';
 import { useNow } from '../useNow';
@@ -42,6 +42,7 @@ function NextWorkout({ store }: { store: Store }) {
           );
         })}
       </div>
+      <p class="muted center small">Estimated duration ≈ {Math.round(estimateWorkoutSec(type, store.history, store.settings) / 60)} min, including warm-up. See Guide.</p>
       <button class="primary big" onClick={() => store.start(type)}>
         Start Workout {type}
       </button>
@@ -86,27 +87,45 @@ function ActiveWorkout({ store }: { store: Store }) {
   );
 }
 
-function RestTimer({ now, rest, onSkip }: { now: number; rest: { startedAt: number; durationSec: number }; onSkip(): void }) {
+function RestTimer({ now, rest, onSkip }: { now: number; rest: Rest; onSkip(): void }) {
   const elapsed = (now - rest.startedAt) / 1000;
-  const over = elapsed >= rest.durationSec;
-  const alerted = useRef<number | undefined>(undefined);
+  const total = rest.extendedSec ?? rest.durationSec;
+  const ready = elapsed >= rest.durationSec;
+  const over = elapsed >= total;
+  const alerted = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (over && alerted.current !== rest.startedAt) {
-      alerted.current = rest.startedAt;
-      if (elapsed - rest.durationSec < 5) alertRestDone();
+    const stage = over ? 'over' : ready ? 'ready' : undefined;
+    const key = `${rest.startedAt}:${stage}`;
+    if (stage && alerted.current !== key) {
+      alerted.current = key;
+      const since = elapsed - (stage === 'over' ? total : rest.durationSec);
+      if (since < 5) alertRestDone();
     }
-  }, [over, rest.startedAt]);
+  }, [ready, over, rest.startedAt]);
+
+  let time: string;
+  let label: string;
+  if (!ready) {
+    time = clock(rest.durationSec - elapsed);
+    label = rest.extendedSec ? `Rest ${clock(rest.durationSec)} · up to ${clock(rest.extendedSec)} if it was hard` : `Failed set · rest ${clock(rest.durationSec)}`;
+  } else if (!over) {
+    time = 'Go';
+    label = `Next set. If the last one was hard: ${clock(total - elapsed)} more`;
+  } else {
+    time = `+${clock(elapsed - total)}`;
+    label = 'Rest done, next set';
+  }
 
   return (
-    <div class={`rest ${over ? 'over' : ''}`}>
+    <div class={`rest ${ready ? 'over' : ''}`}>
       <div>
-        <div class="rest-time">{over ? `+${clock(elapsed - rest.durationSec)}` : clock(rest.durationSec - elapsed)}</div>
-        <div class="rest-label">{over ? 'Rest done, next set' : `Rest · ${clock(rest.durationSec)}`}</div>
+        <div class="rest-time">{time}</div>
+        <div class="rest-label">{label}</div>
       </div>
       <div class="rest-bar">
-        <div style={{ width: `${Math.min(100, (elapsed / rest.durationSec) * 100)}%` }} />
+        <div style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
       </div>
-      <button onClick={onSkip}>{over ? 'Dismiss' : 'Skip'}</button>
+      <button onClick={onSkip}>{ready ? 'Dismiss' : 'Skip'}</button>
     </div>
   );
 }

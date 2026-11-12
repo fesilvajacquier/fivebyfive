@@ -6,13 +6,15 @@ import { WorkoutTab } from './components/WorkoutTab';
 import { HistoryTab } from './components/HistoryTab';
 import { ProgressTab } from './components/ProgressTab';
 import { SettingsTab } from './components/SettingsTab';
+import { GuideTab } from './components/GuideTab';
 
-type Tab = 'workout' | 'history' | 'progress' | 'settings';
+type Tab = 'workout' | 'history' | 'progress' | 'guide' | 'settings';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'workout', label: 'Workout' },
   { id: 'history', label: 'History' },
   { id: 'progress', label: 'Progress' },
+  { id: 'guide', label: 'Guide' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -103,6 +105,7 @@ export function App() {
         {tab === 'workout' && <WorkoutTab store={store} />}
         {tab === 'history' && <HistoryTab store={store} />}
         {tab === 'progress' && <ProgressTab store={store} />}
+        {tab === 'guide' && <GuideTab store={store} />}
         {tab === 'settings' && <SettingsTab store={store} />}
       </main>
       <nav class="tabs">

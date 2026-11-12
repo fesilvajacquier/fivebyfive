@@ -6,7 +6,9 @@ import {
   createWorkout,
   nextWeight,
   nextWorkoutType,
+  estimateWorkoutSec,
   platesPerSide,
+  restAfterSet,
   tapSet,
   warmups,
 } from './program';
@@ -92,15 +94,32 @@ describe('plates and warmups', () => {
     expect(platesPerSide(21, 20, S.plates).remainder).toBe(0.5);
   });
 
-  it('ramps warmups below the working weight', () => {
+  it('follows the StrongLifts warm-up: 2x5 empty bar, then jumps of at most 20 kg', () => {
     expect(warmups('squat', 20, 20)).toEqual([]);
-    expect(warmups('squat', 100, 20)).toEqual([
-      { weight: 20, reps: 5 },
-      { weight: 20, reps: 5 },
-      { weight: 55, reps: 5 },
-      { weight: 70, reps: 3 },
-      { weight: 85, reps: 2 },
-    ]);
-    expect(warmups('deadlift', 100, 20)[0]).toEqual({ weight: 40, reps: 5 });
+    expect(warmups('squat', 70, 20).map((w) => w.weight)).toEqual([20, 20, 35, 52.5]);
+    expect(warmups('bench', 50, 20).map((w) => w.weight)).toEqual([20, 20, 35]);
+    expect(warmups('squat', 30, 20).map((w) => w.weight)).toEqual([20, 20]);
+    expect(warmups('squat', 70, 20).every((w) => w.reps === 5)).toBe(true);
+  });
+
+  it('starts row and deadlift warm-ups from a floor weight instead of the empty bar', () => {
+    expect(warmups('row', 30, 20)).toEqual([]);
+    expect(warmups('row', 40, 20).map((w) => w.weight)).toEqual([30]);
+    expect(warmups('deadlift', 80, 20).map((w) => w.weight)).toEqual([40, 60]);
+  });
+});
+
+describe('rest and duration', () => {
+  const entry = (sets: (number | null)[]): LiftEntry => ({ lift: 'squat', weight: 60, reps: 5, sets });
+
+  it('rests 2 min (3 if hard) after a good set, 5 min after a failed one, none after the last set', () => {
+    expect(restAfterSet(entry([5, null, null, null, null]), 5, S, 0)).toEqual({ startedAt: 0, durationSec: 120, extendedSec: 180 });
+    expect(restAfterSet(entry([3, null, null, null, null]), 3, S, 0)).toEqual({ startedAt: 0, durationSec: 300 });
+    expect(restAfterSet(entry([5, 5, 5, 5, 5]), 5, S, 0)).toBeUndefined();
+  });
+
+  it('estimates workout A at about 42 min for squat 70 / bench 50 / row 40', () => {
+    const settings = { ...S, startWeights: { ...S.startWeights, squat: 70, bench: 50, row: 40 } };
+    expect(Math.round(estimateWorkoutSec('A', [], settings) / 60)).toBe(43);
   });
 });

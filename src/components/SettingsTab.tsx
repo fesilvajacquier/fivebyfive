@@ -98,8 +98,12 @@ export function SettingsTab({ store }: { store: Store }) {
         <h2>Rest & deload</h2>
         <div class="grid">
           <label>
-            Rest after success (sec)
+            Rest after a good set (sec)
             <NumberInput value={s.restSuccessSec} onChange={(v) => v && set({ restSuccessSec: v })} />
+          </label>
+          <label>
+            …up to, if it was hard (sec)
+            <NumberInput value={s.restHardSec} onChange={(v) => v && set({ restHardSec: v })} />
           </label>
           <label>
             Rest after failed set (sec)

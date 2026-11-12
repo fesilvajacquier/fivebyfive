@@ -1,6 +1,11 @@
 import { useState } from 'preact/hooks';
-import { LIFTS, LiftEntry, Settings, Workout, fmtKg, nextWeight, platesPerSide, tapSet, warmups } from '../program';
+import { LIFTS, LiftEntry, Settings, Workout, fmtKg, nextWeight, platesPerSide, restAfterSet, tapSet, warmups } from '../program';
 import { unlockAudio } from '../device';
+
+interface SetTap {
+  reps: number;
+  fresh: boolean;
+}
 
 interface Props {
   workout: Workout;
@@ -11,15 +16,11 @@ interface Props {
 }
 
 export function WorkoutEditor({ workout, settings, history, live, onChange }: Props) {
-  const setEntry = (i: number, e: LiftEntry, completedReps?: number) => {
+  const setEntry = (i: number, e: LiftEntry, tapped?: SetTap) => {
     const entries = workout.entries.map((x, j) => (j === i ? e : x));
     const next: Workout = { ...workout, entries };
-    if (completedReps !== undefined) {
-      const allDone = entries.every((x) => x.sets.every((s) => s !== null));
-      next.rest = allDone
-        ? undefined
-        : { startedAt: Date.now(), durationSec: completedReps >= e.reps ? settings.restSuccessSec : settings.restFailSec };
-    }
+    if (tapped?.fresh) next.rest = restAfterSet(e, tapped.reps, settings, Date.now());
+    else if (tapped && workout.rest) next.rest = restAfterSet(e, tapped.reps, settings, workout.rest.startedAt);
     onChange(next);
   };
 
@@ -31,7 +32,7 @@ export function WorkoutEditor({ workout, settings, history, live, onChange }: Pr
           entry={e}
           settings={settings}
           hint={live ? hintFor(e, history, settings) : undefined}
-          onChange={(ne, completedReps) => setEntry(i, ne, live ? completedReps : undefined)}
+          onChange={(ne, tapped) => setEntry(i, ne, live ? tapped : undefined)}
         />
       ))}
       <div class="card extras">
@@ -56,18 +57,17 @@ function hintFor(e: LiftEntry, history: Workout[], settings: Settings) {
   return undefined;
 }
 
-function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; settings: Settings; hint?: string; onChange(e: LiftEntry, completedReps?: number): void }) {
+function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; settings: Settings; hint?: string; onChange(e: LiftEntry, tapped?: SetTap): void }) {
   const [editing, setEditing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const lift = LIFTS[entry.lift];
   const step = settings.increments[entry.lift] === 5 ? 5 : 2.5;
-  const plates = platesPerSide(entry.weight, settings.barWeight, settings.plates);
 
   const tap = (i: number) => {
     unlockAudio();
     const was = entry.sets[i];
     const v = tapSet(was, entry.reps);
-    onChange({ ...entry, sets: entry.sets.map((s, j) => (j === i ? v : s)) }, was === null && v !== null ? v : undefined);
+    onChange({ ...entry, sets: entry.sets.map((s, j) => (j === i ? v : s)) }, v === null ? undefined : { reps: v, fresh: was === null });
   };
 
   return (
@@ -107,23 +107,56 @@ function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; setti
       <button class="link" onClick={() => setShowHelp(!showHelp)}>
         {showHelp ? 'Hide' : 'Warm-up & plates'}
       </button>
-      {showHelp && (
-        <div class="help">
-          <p>
-            <strong>Per side:</strong>{' '}
-            {plates.plates.length ? plates.plates.map(fmtKg).join(' + ') : 'empty bar'}
-            {plates.remainder > 0 && <span class="warn"> (+{fmtKg(plates.remainder)} kg not loadable)</span>}
-          </p>
-          <p>
-            <strong>Warm-up:</strong>{' '}
-            {warmups(entry.lift, entry.weight, settings.barWeight)
-              .map((w) => `${w.reps}×${fmtKg(w.weight)}`)
-              .join(', ') || 'none'}
-          </p>
-        </div>
-      )}
+      {showHelp && <LoadingPlan entry={entry} settings={settings} />}
     </section>
   );
+}
+
+function LoadingPlan({ entry, settings }: { entry: LiftEntry; settings: Settings }) {
+  const rows = [
+    ...groupWarmups(warmups(entry.lift, entry.weight, settings.barWeight)).map((w) => ({ ...w, kind: 'Warm-up' })),
+    { sets: entry.sets.length, reps: entry.reps, weight: entry.weight, kind: 'Work' },
+  ];
+  return (
+    <table class="plan">
+      <thead>
+        <tr>
+          <th />
+          <th>Sets × reps</th>
+          <th>kg</th>
+          <th>Plates per side</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => {
+          const p = platesPerSide(r.weight, settings.barWeight, settings.plates);
+          return (
+            <tr key={i} class={r.kind === 'Work' ? 'work' : ''}>
+              <td>{r.kind}</td>
+              <td>
+                {r.sets} × {r.reps}
+              </td>
+              <td>{fmtKg(r.weight)}</td>
+              <td>
+                {p.plates.length ? p.plates.map(fmtKg).join(' + ') : 'empty bar'}
+                {p.remainder > 0 && <span class="warn"> (+{fmtKg(p.remainder)})</span>}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function groupWarmups(ws: { weight: number; reps: number }[]) {
+  const out: { sets: number; weight: number; reps: number }[] = [];
+  for (const w of ws) {
+    const last = out[out.length - 1];
+    if (last && last.weight === w.weight && last.reps === w.reps) last.sets++;
+    else out.push({ sets: 1, ...w });
+  }
+  return out;
 }
 
 export function NumberInput({ value, onChange }: { value?: number; onChange(v: number | undefined): void }) {
