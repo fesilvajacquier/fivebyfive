@@ -556,3 +556,28 @@ main {
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+.how-to {
+  margin: -4px 0 12px;
+}
+
+.ok-chip,
+.fail-chip {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85em;
+}
+
+.ok-chip {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.fail-chip {
+  border: 1.5px solid var(--fail);
+  color: var(--fail);
+}

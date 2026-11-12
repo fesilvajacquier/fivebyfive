@@ -25,7 +25,7 @@ export function SettingsTab({ store }: { store: Store }) {
       else downloadFile(file);
       set({ lastExportAt: exportedAt });
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') alert(`Export failed: ${(e as Error).message}`);
+      if ((e as Error).name !== 'AbortError') alert(`No se pudo exportar: ${(e as Error).message}`);
     }
   };
 
@@ -33,11 +33,11 @@ export function SettingsTab({ store }: { store: Store }) {
     if (!f) return;
     try {
       const b = await parseBackup(f);
-      if (!confirm(`Replace ALL current data with this backup (${b.workouts.length} workouts)?`)) return;
+      if (!confirm(`¿Reemplazar TODOS los datos actuales por este respaldo (${b.workouts.length} entrenamientos)?`)) return;
       await store.restore(b);
-      alert('Backup restored.');
+      alert('Respaldo restaurado.');
     } catch (e) {
-      alert(`Import failed: ${(e as Error).message}`);
+      alert(`No se pudo importar: ${(e as Error).message}`);
     } finally {
       if (fileInput.current) fileInput.current.value = '';
     }
@@ -47,31 +47,31 @@ export function SettingsTab({ store }: { store: Store }) {
 
   return (
     <>
-      <h1>Settings</h1>
+      <h1>Ajustes</h1>
 
       <section class="card">
-        <h2>Backup</h2>
+        <h2>Respaldo</h2>
         <p class="muted small">
-          Data lives only in this browser. Export regularly and save the file to Google Drive.
+          Los datos viven solo en este dispositivo. Exportá seguido y guardá el archivo en Google Drive.
           <br />
-          Last backup: <strong>{s.lastExportAt ? daysAgo(s.lastExportAt) : 'never'}</strong>
-          {persisted === false && <> · storage may be cleared by the browser; install the app to your home screen.</>}
+          Último respaldo: <strong>{s.lastExportAt ? daysAgo(s.lastExportAt) : 'nunca'}</strong>
+          {persisted === false && <> · el navegador podría borrar los datos; instalá la app en la pantalla de inicio.</>}
         </p>
         <div class="actions">
           {shareSupported && (
             <button class="primary" onClick={() => exportNow(true)}>
-              Share to Drive…
+              Compartir a Drive…
             </button>
           )}
-          <button onClick={() => exportNow(false)}>Download</button>
-          <button onClick={() => fileInput.current?.click()}>Import…</button>
+          <button onClick={() => exportNow(false)}>Descargar</button>
+          <button onClick={() => fileInput.current?.click()}>Importar…</button>
           <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(e) => importFile((e.target as HTMLInputElement).files?.[0])} />
         </div>
       </section>
 
       <section class="card">
-        <h2>Starting weights (kg)</h2>
-        <p class="muted small">Used only for a lift's first session. After that, weights come from your history.</p>
+        <h2>Pesos iniciales (kg)</h2>
+        <p class="muted small">Se usan solo en la primera sesión de cada ejercicio. Después, el peso sale de tu historial.</p>
         <div class="grid">
           {LIFT_IDS.map((l) => (
             <label key={l}>
@@ -83,7 +83,7 @@ export function SettingsTab({ store }: { store: Store }) {
       </section>
 
       <section class="card">
-        <h2>Increment per success (kg)</h2>
+        <h2>Aumento por sesión lograda (kg)</h2>
         <div class="grid">
           {LIFT_IDS.map((l) => (
             <label key={l}>
@@ -95,63 +95,63 @@ export function SettingsTab({ store }: { store: Store }) {
       </section>
 
       <section class="card">
-        <h2>Rest & deload</h2>
+        <h2>Descanso y descarga</h2>
         <div class="grid">
           <label>
-            Rest after a good set (sec)
+            Descanso tras serie lograda (s)
             <NumberInput value={s.restSuccessSec} onChange={(v) => v && set({ restSuccessSec: v })} />
           </label>
           <label>
-            …up to, if it was hard (sec)
+            …hasta, si costó (s)
             <NumberInput value={s.restHardSec} onChange={(v) => v && set({ restHardSec: v })} />
           </label>
           <label>
-            Rest after failed set (sec)
+            Descanso tras serie fallida (s)
             <NumberInput value={s.restFailSec} onChange={(v) => v && set({ restFailSec: v })} />
           </label>
           <label>
-            Failures before deload
+            Fallos antes de descargar
             <NumberInput value={s.failuresBeforeDeload} onChange={(v) => v && set({ failuresBeforeDeload: v })} />
           </label>
           <label>
-            Deload (%)
+            Descarga (%)
             <NumberInput value={s.deloadPercent} onChange={(v) => v !== undefined && set({ deloadPercent: v })} />
           </label>
         </div>
       </section>
 
       <section class="card">
-        <h2>Equipment</h2>
+        <h2>Equipo</h2>
         <div class="grid">
           <label>
-            Bar weight (kg)
+            Peso de la barra (kg)
             <NumberInput value={s.barWeight} onChange={(v) => v !== undefined && set({ barWeight: v })} />
           </label>
           <label>
-            Plates (kg, comma-separated)
+            Discos (kg, separados por coma)
             <PlatesInput plates={s.plates} onChange={(plates) => set({ plates })} />
           </label>
         </div>
       </section>
 
       <section class="card">
-        <h2>Danger zone</h2>
+        <h2>Zona peligrosa</h2>
         <div class="actions">
-          <button onClick={() => confirm('Reset settings to defaults?') && store.updateSettings({ ...DEFAULT_SETTINGS, lastExportAt: s.lastExportAt })}>
-            Reset settings
+          <button onClick={() => confirm('¿Volver a los ajustes por defecto?') && store.updateSettings({ ...DEFAULT_SETTINGS, lastExportAt: s.lastExportAt })}>
+            Restablecer ajustes
           </button>
           <button
             class="danger"
             onClick={() =>
-              prompt('This deletes every workout. Type DELETE to confirm.') === 'DELETE' &&
+              prompt('Esto borra todos los entrenamientos. Escribí BORRAR para confirmar.') === 'BORRAR' &&
               store.restore({ app: 'fivebyfive', version: 1, exportedAt: Date.now(), settings: s, workouts: [] })
             }
           >
-            Erase all workouts
+            Borrar todos los entrenamientos
           </button>
         </div>
       </section>
-      <p class="muted center small">Five by Five · data stored locally with IndexedDB</p>
+      <p class="muted center small">Five by Five · datos guardados en el dispositivo (IndexedDB)</p>
     </>
   );
 }

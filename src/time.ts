@@ -7,9 +7,9 @@ export const clock = (sec: number) => {
 };
 
 export const fmtDate = (ms: number) =>
-  new Date(ms).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  new Date(ms).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
 export function daysAgo(ms: number) {
   const d = Math.floor((Date.now() - ms) / 86_400_000);
-  return d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`;
+  return d === 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`;
 }

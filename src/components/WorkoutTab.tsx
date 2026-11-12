@@ -15,12 +15,12 @@ function NextWorkout({ store }: { store: Store }) {
   const [type, setType] = useState<WorkoutType>(suggested);
   return (
     <>
-      <h1>Next workout</h1>
+      <h1>Próximo entrenamiento</h1>
       <div class="segmented">
         {(['A', 'B'] as WorkoutType[]).map((t) => (
           <button key={t} class={type === t ? 'on' : ''} onClick={() => setType(t)}>
             Workout {t}
-            {t === suggested && <small> · up next</small>}
+            {t === suggested && <small> · toca</small>}
           </button>
         ))}
       </div>
@@ -35,20 +35,20 @@ function NextWorkout({ store }: { store: Store }) {
               </span>
               <strong>
                 {fmtKg(n.weight)} kg
-                {n.reason === 'deload' && <em class="tag">deload</em>}
-                {n.reason === 'repeat' && <em class="tag">retry</em>}
+                {n.reason === 'deload' && <em class="tag">descarga</em>}
+                {n.reason === 'repeat' && <em class="tag">repetir</em>}
               </strong>
             </div>
           );
         })}
       </div>
-      <p class="muted center small">Estimated duration ≈ {Math.round(estimateWorkoutSec(type, store.history, store.settings) / 60)} min, including warm-up. See Guide.</p>
+      <p class="muted center small">Duración estimada ≈ {Math.round(estimateWorkoutSec(type, store.history, store.settings) / 60)} min, con entrada en calor. Ver Guía.</p>
       <button class="primary big" onClick={() => store.start(type)}>
-        Start Workout {type}
+        Empezar Workout {type}
       </button>
       {store.history.length === 0 && (
         <p class="muted center">
-          First time? Set your starting weights in Settings before you start.
+          ¿Primera vez? Configurá tus pesos iniciales en Ajustes antes de empezar.
         </p>
       )}
     </>
@@ -62,10 +62,10 @@ function ActiveWorkout({ store }: { store: Store }) {
 
   const finish = () => {
     const pending = w.entries.some((e) => e.sets.some((s) => s === null));
-    if (pending && !confirm('Some sets are not marked. Finish anyway? Unmarked sets count as failed.')) return;
+    if (pending && !confirm('Hay series sin marcar. ¿Terminar igual? Las series sin marcar cuentan como fallidas.')) return;
     store.finishActive();
   };
-  const cancel = () => confirm('Discard this workout?') && store.cancelActive();
+  const cancel = () => confirm('¿Descartar este entrenamiento?') && store.cancelActive();
 
   return (
     <>
@@ -73,13 +73,17 @@ function ActiveWorkout({ store }: { store: Store }) {
         <h1>Workout {w.type}</h1>
         <span class="muted">{clock((now - w.startedAt) / 1000)}</span>
       </div>
+      <p class="muted small how-to">
+        Tocá cada serie al terminarla: queda en <span class="ok-chip">5</span> = lograda. Si hiciste menos, tocá de nuevo para bajar las repeticiones:{' '}
+        <span class="fail-chip">4</span> = fallida. Un toque más con 0 la deja vacía.
+      </p>
       <WorkoutEditor workout={w} settings={store.settings} history={store.history} live onChange={store.updateActive} />
       <div class="actions">
         <button class="danger" onClick={cancel}>
-          Discard
+          Descartar
         </button>
         <button class="primary" onClick={finish}>
-          Finish workout
+          Terminar
         </button>
       </div>
       {w.rest && <RestTimer now={now} rest={w.rest} onSkip={() => store.updateActive({ ...w, rest: undefined })} />}
@@ -107,13 +111,13 @@ function RestTimer({ now, rest, onSkip }: { now: number; rest: Rest; onSkip(): v
   let label: string;
   if (!ready) {
     time = clock(rest.durationSec - elapsed);
-    label = rest.extendedSec ? `Rest ${clock(rest.durationSec)} · up to ${clock(rest.extendedSec)} if it was hard` : `Failed set · rest ${clock(rest.durationSec)}`;
+    label = rest.extendedSec ? `Descanso ${clock(rest.durationSec)} · hasta ${clock(rest.extendedSec)} si costó` : `Serie fallida · descanso ${clock(rest.durationSec)}`;
   } else if (!over) {
-    time = 'Go';
-    label = `Next set. If the last one was hard: ${clock(total - elapsed)} more`;
+    time = 'Dale';
+    label = `Próxima serie. Si la anterior costó: ${clock(total - elapsed)} más`;
   } else {
     time = `+${clock(elapsed - total)}`;
-    label = 'Rest done, next set';
+    label = 'Descanso terminado, próxima serie';
   }
 
   return (
@@ -125,7 +129,7 @@ function RestTimer({ now, rest, onSkip }: { now: number; rest: Rest; onSkip(): v
       <div class="rest-bar">
         <div style={{ width: `${Math.min(100, (elapsed / total) * 100)}%` }} />
       </div>
-      <button onClick={onSkip}>{ready ? 'Dismiss' : 'Skip'}</button>
+      <button onClick={onSkip}>{ready ? 'Cerrar' : 'Saltar'}</button>
     </div>
   );
 }

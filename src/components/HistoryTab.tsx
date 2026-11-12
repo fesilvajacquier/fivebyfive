@@ -14,7 +14,7 @@ export function HistoryTab({ store }: { store: Store }) {
       <>
         <div class="title-row">
           <button class="link" onClick={() => setOpenId(undefined)}>
-            ‹ History
+            ‹ Historial
           </button>
         </div>
         <h1>Workout {open.type}</h1>
@@ -27,12 +27,12 @@ export function HistoryTab({ store }: { store: Store }) {
           <button
             class="danger"
             onClick={() => {
-              if (!confirm('Delete this workout?')) return;
+              if (!confirm('¿Borrar este entrenamiento?')) return;
               store.removeWorkout(open.id);
               setOpenId(undefined);
             }}
           >
-            Delete workout
+            Borrar entrenamiento
           </button>
         </div>
       </>
@@ -41,8 +41,8 @@ export function HistoryTab({ store }: { store: Store }) {
 
   return (
     <>
-      <h1>History</h1>
-      {store.history.length === 0 && <p class="muted">No workouts yet.</p>}
+      <h1>Historial</h1>
+      {store.history.length === 0 && <p class="muted">Todavía no hay entrenamientos.</p>}
       {store.history.map((w) => (
         <button key={w.id} class="card history-item" onClick={() => setOpenId(w.id)}>
           <div class="title-row">
@@ -53,7 +53,7 @@ export function HistoryTab({ store }: { store: Store }) {
             <div class="row" key={e.lift}>
               <span>{LIFTS[e.lift].name}</span>
               <span class={isSkipped(e) ? 'muted' : isSuccess(e) ? 'ok-text' : 'fail-text'}>
-                {isSkipped(e) ? 'skipped' : e.sets.map((s) => s ?? '–').join('/')}
+                {isSkipped(e) ? 'salteado' : e.sets.map((s) => s ?? '–').join('/')}
               </span>
               <strong>{fmtKg(e.weight)} kg</strong>
             </div>

@@ -4,8 +4,8 @@ import { LIFTS, LIFT_IDS, LiftId, Workout, fmtKg, isSkipped, isSuccess, nextWeig
 export function ProgressTab({ store }: { store: Store }) {
   return (
     <>
-      <h1>Progress</h1>
-      <p class="muted">{store.history.length} workouts logged</p>
+      <h1>Progreso</h1>
+      <p class="muted">{store.history.length} entrenamientos registrados</p>
       {LIFT_IDS.map((lift) => (
         <LiftChart key={lift} lift={lift} store={store} />
       ))}
@@ -22,12 +22,12 @@ function LiftChart({ lift, store }: { lift: LiftId; store: Store }) {
     <section class="card">
       <div class="title-row">
         <h2>{LIFTS[lift].name}</h2>
-        <span class="muted">next {fmtKg(next.weight)} kg</span>
+        <span class="muted">próximo {fmtKg(next.weight)} kg</span>
       </div>
       <p class="muted small">
-        {points.length} sessions{best > 0 && ` · best 5×5 ${fmtKg(best)} kg`}
+        {points.length} sesiones{best > 0 && ` · mejor ${fmtKg(best)} kg completo`}
       </p>
-      {points.length >= 2 ? <Chart points={points} /> : <p class="muted small">Log at least two sessions to see a chart.</p>}
+      {points.length >= 2 ? <Chart points={points} /> : <p class="muted small">Registrá al menos dos sesiones para ver el gráfico.</p>}
     </section>
   );
 }
@@ -55,10 +55,10 @@ function Chart({ points }: { points: Point[] }) {
   const t1 = Math.max(t0 + 1, points[points.length - 1].t);
   const x = (t: number) => pad.l + ((t - t0) / (t1 - t0)) * (W - pad.l - pad.r);
   const y = (w: number) => pad.t + (1 - (w - lo) / (hi - lo)) * (H - pad.t - pad.b);
-  const fmtDay = (t: number) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const fmtDay = (t: number) => new Date(t).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
 
   return (
-    <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Working weight over time">
+    <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Peso de trabajo en el tiempo">
       {[lo, (lo + hi) / 2, hi].map((g) => (
         <g key={g}>
           <line x1={pad.l} x2={W - pad.r} y1={y(g)} y2={y(g)} class="grid" />

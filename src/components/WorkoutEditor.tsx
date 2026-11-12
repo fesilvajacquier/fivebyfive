@@ -37,11 +37,11 @@ export function WorkoutEditor({ workout, settings, history, live, onChange }: Pr
       ))}
       <div class="card extras">
         <label>
-          Bodyweight (kg)
+          Peso corporal (kg)
           <NumberInput value={workout.bodyweight} onChange={(v) => onChange({ ...workout, bodyweight: v })} />
         </label>
         <label>
-          Notes
+          Notas
           <textarea rows={2} value={workout.notes ?? ''} onInput={(ev) => onChange({ ...workout, notes: (ev.target as HTMLTextAreaElement).value })} />
         </label>
       </div>
@@ -51,9 +51,9 @@ export function WorkoutEditor({ workout, settings, history, live, onChange }: Pr
 
 function hintFor(e: LiftEntry, history: Workout[], settings: Settings) {
   const n = nextWeight(e.lift, history, settings);
-  if (n.weight !== e.weight) return 'Weight adjusted manually';
-  if (n.reason === 'deload') return `Deload after ${n.failures} failed sessions`;
-  if (n.reason === 'repeat') return `Failed last time (${n.failures}/${settings.failuresBeforeDeload} before deload)`;
+  if (n.weight !== e.weight) return 'Peso ajustado a mano';
+  if (n.reason === 'deload') return `Descarga después de ${n.failures} sesiones fallidas`;
+  if (n.reason === 'repeat') return `Fallaste la última vez (${n.failures} de ${settings.failuresBeforeDeload} antes de la descarga)`;
   return undefined;
 }
 
@@ -88,7 +88,7 @@ function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; setti
           <NumberInput value={entry.weight} onChange={(v) => v !== undefined && onChange({ ...entry, weight: v })} />
           <button onClick={() => onChange({ ...entry, weight: entry.weight + step })}>+{step}</button>
           <button class="primary" onClick={() => setEditing(false)}>
-            Done
+            Listo
           </button>
         </div>
       )}
@@ -98,14 +98,14 @@ function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; setti
             key={i}
             class={`set ${s === null ? '' : s >= entry.reps ? 'ok' : 'fail'}`}
             onClick={() => tap(i)}
-            aria-label={`Set ${i + 1}: ${s === null ? 'not done' : `${s} reps`}`}
+            aria-label={`Serie ${i + 1}: ${s === null ? 'sin hacer' : `${s} repeticiones`}`}
           >
             {s ?? entry.reps}
           </button>
         ))}
       </div>
       <button class="link" onClick={() => setShowHelp(!showHelp)}>
-        {showHelp ? 'Hide' : 'Warm-up & plates'}
+        {showHelp ? 'Ocultar' : 'Entrada en calor y discos'}
       </button>
       {showHelp && <LoadingPlan entry={entry} settings={settings} />}
     </section>
@@ -114,31 +114,31 @@ function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; setti
 
 function LoadingPlan({ entry, settings }: { entry: LiftEntry; settings: Settings }) {
   const rows = [
-    ...groupWarmups(warmups(entry.lift, entry.weight, settings.barWeight)).map((w) => ({ ...w, kind: 'Warm-up' })),
-    { sets: entry.sets.length, reps: entry.reps, weight: entry.weight, kind: 'Work' },
+    ...groupWarmups(warmups(entry.lift, entry.weight, settings.barWeight)).map((w) => ({ ...w, kind: 'Calor' })),
+    { sets: entry.sets.length, reps: entry.reps, weight: entry.weight, kind: 'Trabajo' },
   ];
   return (
     <table class="plan">
       <thead>
         <tr>
           <th />
-          <th>Sets × reps</th>
+          <th>Series × reps</th>
           <th>kg</th>
-          <th>Plates per side</th>
+          <th>Discos por lado</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r, i) => {
           const p = platesPerSide(r.weight, settings.barWeight, settings.plates);
           return (
-            <tr key={i} class={r.kind === 'Work' ? 'work' : ''}>
+            <tr key={i} class={r.kind === 'Trabajo' ? 'work' : ''}>
               <td>{r.kind}</td>
               <td>
                 {r.sets} × {r.reps}
               </td>
               <td>{fmtKg(r.weight)}</td>
               <td>
-                {p.plates.length ? p.plates.map(fmtKg).join(' + ') : 'empty bar'}
+                {p.plates.length ? p.plates.map(fmtKg).join(' + ') : 'barra sola'}
                 {p.remainder > 0 && <span class="warn"> (+{fmtKg(p.remainder)})</span>}
               </td>
             </tr>

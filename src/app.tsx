@@ -11,11 +11,11 @@ import { GuideTab } from './components/GuideTab';
 type Tab = 'workout' | 'history' | 'progress' | 'guide' | 'settings';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'workout', label: 'Workout' },
-  { id: 'history', label: 'History' },
-  { id: 'progress', label: 'Progress' },
-  { id: 'guide', label: 'Guide' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'workout', label: 'Entrenar' },
+  { id: 'history', label: 'Historial' },
+  { id: 'progress', label: 'Progreso' },
+  { id: 'guide', label: 'Guía' },
+  { id: 'settings', label: 'Ajustes' },
 ];
 
 export interface Store {
@@ -51,7 +51,7 @@ export function App() {
     reload();
   }, []);
 
-  if (!loaded || !settings) return <div class="loading">Loading…</div>;
+  if (!loaded || !settings) return <div class="loading">Cargando…</div>;
 
   const sortNewest = (ws: Workout[]) => [...ws].sort((a, b) => b.startedAt - a.startedAt);
 

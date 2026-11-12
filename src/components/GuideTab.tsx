@@ -1,5 +1,5 @@
 import type { Store } from '../app';
-import { BEFORE_WORK_SEC, LIFTS, LIFT_IDS, MAX_WARMUP_JUMP, SET_SEC, Settings, WARMUP_SET_SEC, WorkoutType, estimateWorkoutSec, fmtKg, nextWeight } from '../program';
+import { BEFORE_WORK_SEC, LIFTS, LIFT_IDS, MAX_WARMUP_JUMP, MIN_WARMUP_SETS, SET_SEC, Settings, WARMUP_SET_SEC, WorkoutType, estimateWorkoutSec, fmtKg, nextWeight } from '../program';
 import { clock } from '../time';
 
 const REFS = [
@@ -113,13 +113,60 @@ export function GuideTab({ store }: { store: Store }) {
             </tr>
             <tr>
               <td>Entrada en calor</td>
-              <td>2×5 barra sola, luego saltos de hasta {MAX_WARMUP_JUMP} kg</td>
+              <td>
+                2×5 barra sola, luego saltos de hasta {MAX_WARMUP_JUMP} kg; peso muerto, mínimo {MIN_WARMUP_SETS.deadlift} series
+              </td>
               <td>
                 StrongLifts <Ref n={1} /> <Ref n={2} />
               </td>
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <section class="card">
+        <h2>Cómo registrar las series</h2>
+        <p>Cada círculo es una serie de trabajo. Tocalo al terminar la serie:</p>
+        <table>
+          <tbody>
+            <tr>
+              <td>1 toque</td>
+              <td>
+                <span class="ok-chip">5</span> naranja: serie lograda (hiciste las 5).
+              </td>
+            </tr>
+            <tr>
+              <td>2 toques</td>
+              <td>
+                <span class="fail-chip">4</span> borde rojo: hiciste 4. Cada toque más resta una (3, 2, 1, 0).
+              </td>
+            </tr>
+            <tr>
+              <td>Tras el 0</td>
+              <td>Vuelve a quedar vacío, como si no la hubieras hecho.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Cómo cuenta la app una sesión de cada ejercicio:</p>
+        <ul>
+          <li>
+            <strong>Lograda:</strong> todas las series en 5. La próxima vez sube el peso.
+          </li>
+          <li>
+            <strong>Fallida:</strong> al menos una serie con menos de 5, o sin marcar al terminar. La próxima vez repetís el peso.
+          </li>
+          <li>
+            <strong>Salteada:</strong> ninguna serie marcada. No cuenta como fallo y el peso no cambia.
+          </li>
+          <li>
+            Después de <strong>{s.failuresBeforeDeload} sesiones fallidas seguidas</strong> con el mismo peso, baja un {s.deloadPercent}% (ver “Fallos y
+            descarga”).
+          </li>
+        </ul>
+        <p>
+          Contá solo las repeticiones completas y con buena técnica. Si te equivocaste, abrí el entrenamiento en Historial y corregilo: los pesos siguientes se recalculan solos.
+        </p>
+        <p class="muted small">Al marcar una serie arranca el descanso: {clock(s.restSuccessSec)} si fue lograda, {clock(s.restFailSec)} si fue fallida.</p>
       </section>
 
       <section class="card">
@@ -158,7 +205,7 @@ export function GuideTab({ store }: { store: Store }) {
             const w = nextWeight(l, store.history, s).weight;
             return `${LIFTS[l].name} ${fmtKg(w)} kg → +${Math.round((s.increments[l] / w) * 100)}%`;
           }).join(' · ')}
-          . Por encima del 10%, el aumento es grande para ese ejercicio: si se estanca, bajá su incremento a 1.25 kg en Settings (necesitás discos de 0.625
+          . Por encima del 10%, el aumento es grande para ese ejercicio: si se estanca, bajá su incremento a 1.25 kg en Ajustes (necesitás discos de 0.625
           kg).
         </p>
         <p>
@@ -226,8 +273,18 @@ export function GuideTab({ store }: { store: Store }) {
           <li>Luego series de 5 subiendo hasta {MAX_WARMUP_JUMP} kg por vez, hasta el peso de trabajo.</li>
           <li>Sin descanso entre series de calentamiento: cargás discos y seguís. Solo se descansa antes de la primera serie de trabajo.</li>
           <li>Si el peso de trabajo es la barra sola, no hay entrada en calor.</li>
+          <li>
+            <strong>Peso muerto: al menos {MIN_WARMUP_SETS.deadlift} series</strong>, repartidas en partes iguales desde 40 kg.
+          </li>
         </ul>
-        <p>Cuanto más pesado, más series de calentamiento. La app las calcula sola en “Warm-up & plates”.</p>
+        <p class="verdict">
+          Las {MIN_WARMUP_SETS.deadlift} series del peso muerto son una elección de esta app, no de StrongLifts (que con saltos de 10–20 kg desde 40 kg usaría 2 o 3 con pesos medios{' '}
+          <Ref n={1} />
+          ). Como hay una sola serie de trabajo, la entrada en calor es la única práctica del movimiento en la sesión, y llegar con saltos chicos a un
+          peso cercano al de trabajo es lo que la revisión de 2021 asocia con mejor rendimiento en fuerza máxima <Ref n={10} />. Cuesta unos 2 minutos
+          más.
+        </p>
+        <p>Cuanto más pesado, más series de calentamiento. La app las calcula sola en “Entrada en calor y discos”, debajo de cada ejercicio.</p>
         <p class="verdict">
           La evidencia es mixta. Ribeiro et al. 2014 no encontraron diferencias en las repeticiones hechas con o sin entrada en calor específica <Ref n={9} />.
           Una revisión de 2021 sugiere que calentar cerca del peso máximo puede ayudar en fuerza máxima, sin consenso <Ref n={10} />. El ACSM 2026 no la trata{' '}

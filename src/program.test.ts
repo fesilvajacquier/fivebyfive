@@ -105,7 +105,9 @@ describe('plates and warmups', () => {
   it('starts row and deadlift warm-ups from a floor weight instead of the empty bar', () => {
     expect(warmups('row', 30, 20)).toEqual([]);
     expect(warmups('row', 40, 20).map((w) => w.weight)).toEqual([30]);
-    expect(warmups('deadlift', 80, 20).map((w) => w.weight)).toEqual([40, 60]);
+    expect(warmups('deadlift', 80, 20).map((w) => w.weight)).toEqual([40, 50, 60, 70]);
+    expect(warmups('deadlift', 140, 20).map((w) => w.weight)).toEqual([40, 60, 80, 100, 120]);
+    expect(warmups('deadlift', 45, 20).map((w) => w.weight)).toEqual([40, 42.5]);
   });
 });
 

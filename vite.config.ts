@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'Five by Five',
         short_name: '5×5',
-        description: '5×5 strength training log',
+        description: 'Registro de entrenamiento de fuerza 5×5',
         theme_color: '#121214',
         background_color: '#121214',
         display: 'standalone',

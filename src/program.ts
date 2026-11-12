@@ -2,11 +2,11 @@ export type LiftId = 'squat' | 'bench' | 'row' | 'ohp' | 'deadlift';
 export type WorkoutType = 'A' | 'B';
 
 export const LIFTS: Record<LiftId, { name: string; sets: number; reps: number }> = {
-  squat: { name: 'Squat', sets: 5, reps: 5 },
-  bench: { name: 'Bench Press', sets: 5, reps: 5 },
-  row: { name: 'Barbell Row', sets: 5, reps: 5 },
-  ohp: { name: 'Overhead Press', sets: 5, reps: 5 },
-  deadlift: { name: 'Deadlift', sets: 1, reps: 5 },
+  squat: { name: 'Sentadilla', sets: 5, reps: 5 },
+  bench: { name: 'Press de banca', sets: 5, reps: 5 },
+  row: { name: 'Remo con barra', sets: 5, reps: 5 },
+  ohp: { name: 'Press militar', sets: 5, reps: 5 },
+  deadlift: { name: 'Peso muerto', sets: 1, reps: 5 },
 };
 
 export const LIFT_IDS = Object.keys(LIFTS) as LiftId[];
@@ -134,13 +134,15 @@ export interface WarmupSet {
 
 export const FLOOR_START: Partial<Record<LiftId, number>> = { row: 30, deadlift: 40 };
 export const MAX_WARMUP_JUMP = 20;
+export const MIN_WARMUP_SETS: Partial<Record<LiftId, number>> = { deadlift: 4 };
 
 export function warmups(lift: LiftId, weight: number, bar: number): WarmupSet[] {
   const floor = FLOOR_START[lift];
   const start = floor === undefined ? bar : Math.max(floor, bar);
   if (weight <= start) return [];
   const sets: WarmupSet[] = floor === undefined ? [{ weight: bar, reps: 5 }, { weight: bar, reps: 5 }] : [{ weight: start, reps: 5 }];
-  const jumps = Math.ceil((weight - start) / MAX_WARMUP_JUMP - 1e-9);
+  const minJumps = (MIN_WARMUP_SETS[lift] ?? 0) - sets.length + 1;
+  const jumps = Math.max(minJumps, Math.ceil((weight - start) / MAX_WARMUP_JUMP - 1e-9));
   for (let i = 1; i < jumps; i++) {
     const w = roundDown(start + ((weight - start) * i) / jumps);
     if (w > sets[sets.length - 1].weight && w < weight) sets.push({ weight: w, reps: 5 });

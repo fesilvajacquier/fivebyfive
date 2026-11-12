@@ -31,6 +31,6 @@ export function downloadFile(f: File) {
 
 export async function parseBackup(f: File): Promise<Backup> {
   const data = JSON.parse(await f.text());
-  if (data?.app !== 'fivebyfive' || !Array.isArray(data.workouts)) throw new Error('Not a fivebyfive backup file');
+  if (data?.app !== 'fivebyfive' || !Array.isArray(data.workouts)) throw new Error('El archivo no es un respaldo de Five by Five');
   return { ...data, settings: { ...DEFAULT_SETTINGS, ...data.settings } };
 }
