@@ -1,4 +1,6 @@
 import type { Store } from '../app';
+import { LiftId } from '../program';
+import { TechniqueGuide } from './TechniqueGuide';
 import { BEFORE_WORK_SEC, LIFTS, LIFT_IDS, MAX_WARMUP_JUMP, MIN_WARMUP_SETS, SET_SEC, Settings, WARMUP_SET_SEC, WorkoutType, estimateWorkoutSec, fmtKg, nextWeight } from '../program';
 import { clock } from '../time';
 
@@ -43,21 +45,46 @@ const REFS = [
   },
 ];
 
-const Ref = ({ n }: { n: number }) => (
-  <a href={`#ref-${n}`} class="cite">
+export const Ref = ({ n, prefix = 'ref' }: { n: number; prefix?: string }) => (
+  <a
+    href={`#${prefix}-${n}`}
+    class="cite"
+    onClick={(ev) => {
+      ev.preventDefault();
+      document.getElementById(`${prefix}-${n}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }}
+  >
     [{n}]
   </a>
 );
 
+export type GuideView = 'program' | 'technique';
+
+export function GuideTab({ store, view, focus, onView }: { store: Store; view: GuideView; focus?: LiftId; onView(v: GuideView): void }) {
+  return (
+    <div class="guide">
+      <h1>Guía</h1>
+      <div class="segmented">
+        <button class={view === 'program' ? 'on' : ''} onClick={() => onView('program')}>
+          Programa
+        </button>
+        <button class={view === 'technique' ? 'on' : ''} onClick={() => onView('technique')}>
+          Técnica
+        </button>
+      </div>
+      {view === 'program' ? <ProgramGuide store={store} /> : <TechniqueGuide focus={focus} />}
+    </div>
+  );
+}
+
 const minutes = (type: WorkoutType, store: Store, settings: Settings) => Math.round(estimateWorkoutSec(type, store.history, settings) / 60);
 
-export function GuideTab({ store }: { store: Store }) {
+function ProgramGuide({ store }: { store: Store }) {
   const s = store.settings;
   const restOptions = [90, 120, 180];
 
   return (
-    <div class="guide">
-      <h1>Guía</h1>
+    <>
       <p class="muted">Por qué la app usa cada número, y de dónde sale. Los valores en negrita son tu configuración actual.</p>
 
       <section class="card">
@@ -345,6 +372,6 @@ export function GuideTab({ store }: { store: Store }) {
           profesional.
         </p>
       </section>
-    </div>
+    </>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import * as db from './db';
-import { Settings, Workout, WorkoutType, createWorkout } from './program';
+import { LiftId, Settings, Workout, WorkoutType, createWorkout } from './program';
+import { GuideView } from './components/GuideTab';
 import { Backup } from './backup';
-import { WorkoutTab } from './components/WorkoutTab';
+import { RestTimer, WorkoutTab } from './components/WorkoutTab';
 import { HistoryTab } from './components/HistoryTab';
 import { ProgressTab } from './components/ProgressTab';
 import { SettingsTab } from './components/SettingsTab';
@@ -30,6 +31,7 @@ export interface Store {
   removeWorkout(id: string): void;
   updateSettings(s: Settings): void;
   restore(b: Backup): Promise<void>;
+  openTechnique(lift: LiftId): void;
 }
 
 export function App() {
@@ -38,6 +40,7 @@ export function App() {
   const [history, setHistory] = useState<Workout[]>([]);
   const [settings, setSettings] = useState<Settings>();
   const [active, setActive] = useState<Workout>();
+  const [guide, setGuide] = useState<{ view: GuideView; lift?: LiftId }>({ view: 'program' });
 
   async function reload() {
     const [h, s, a] = await Promise.all([db.loadWorkouts(), db.loadSettings(), db.loadActive()]);
@@ -97,6 +100,10 @@ export function App() {
       await db.replaceAll(b.settings, b.workouts, b.active);
       await reload();
     },
+    openTechnique(lift) {
+      setGuide({ view: 'technique', lift });
+      setTab('guide');
+    },
   };
 
   return (
@@ -105,9 +112,10 @@ export function App() {
         {tab === 'workout' && <WorkoutTab store={store} />}
         {tab === 'history' && <HistoryTab store={store} />}
         {tab === 'progress' && <ProgressTab store={store} />}
-        {tab === 'guide' && <GuideTab store={store} />}
+        {tab === 'guide' && <GuideTab store={store} view={guide.view} focus={guide.lift} onView={(view) => setGuide({ view })} />}
         {tab === 'settings' && <SettingsTab store={store} />}
       </main>
+      {active?.rest && <RestTimer rest={active.rest} onSkip={() => store.updateActive({ ...active, rest: undefined })} />}
       <nav class="tabs">
         {TABS.map((t) => (
           <button key={t.id} class={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>

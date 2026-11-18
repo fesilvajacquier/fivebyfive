@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { LIFTS, LiftEntry, Settings, Workout, fmtKg, nextWeight, platesPerSide, restAfterSet, tapSet, warmups } from '../program';
+import { LIFTS, LiftEntry, LiftId, Settings, Workout, fmtKg, nextWeight, platesPerSide, restAfterSet, tapSet, warmups } from '../program';
 import { unlockAudio } from '../device';
 
 interface SetTap {
@@ -13,9 +13,10 @@ interface Props {
   history: Workout[];
   live: boolean;
   onChange(w: Workout): void;
+  onTechnique?(lift: LiftId): void;
 }
 
-export function WorkoutEditor({ workout, settings, history, live, onChange }: Props) {
+export function WorkoutEditor({ workout, settings, history, live, onChange, onTechnique }: Props) {
   const setEntry = (i: number, e: LiftEntry, tapped?: SetTap) => {
     const entries = workout.entries.map((x, j) => (j === i ? e : x));
     const next: Workout = { ...workout, entries };
@@ -32,6 +33,7 @@ export function WorkoutEditor({ workout, settings, history, live, onChange }: Pr
           entry={e}
           settings={settings}
           hint={live ? hintFor(e, history, settings) : undefined}
+          onTechnique={onTechnique && (() => onTechnique(e.lift))}
           onChange={(ne, tapped) => setEntry(i, ne, live ? tapped : undefined)}
         />
       ))}
@@ -57,7 +59,19 @@ function hintFor(e: LiftEntry, history: Workout[], settings: Settings) {
   return undefined;
 }
 
-function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; settings: Settings; hint?: string; onChange(e: LiftEntry, tapped?: SetTap): void }) {
+function LiftCard({
+  entry,
+  settings,
+  hint,
+  onChange,
+  onTechnique,
+}: {
+  entry: LiftEntry;
+  settings: Settings;
+  hint?: string;
+  onChange(e: LiftEntry, tapped?: SetTap): void;
+  onTechnique?(): void;
+}) {
   const [editing, setEditing] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const lift = LIFTS[entry.lift];
@@ -104,9 +118,16 @@ function LiftCard({ entry, settings, hint, onChange }: { entry: LiftEntry; setti
           </button>
         ))}
       </div>
-      <button class="link" onClick={() => setShowHelp(!showHelp)}>
-        {showHelp ? 'Ocultar' : 'Entrada en calor y discos'}
-      </button>
+      <div class="links">
+        <button class="link" onClick={() => setShowHelp(!showHelp)}>
+          {showHelp ? 'Ocultar' : 'Entrada en calor y discos'}
+        </button>
+        {onTechnique && (
+          <button class="link" onClick={onTechnique}>
+            Técnica
+          </button>
+        )}
+      </div>
       {showHelp && <LoadingPlan entry={entry} settings={settings} />}
     </section>
   );

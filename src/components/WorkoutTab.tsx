@@ -77,7 +77,7 @@ function ActiveWorkout({ store }: { store: Store }) {
         Tocá cada serie al terminarla: queda en <span class="ok-chip">5</span> = lograda. Si hiciste menos, tocá de nuevo para bajar las repeticiones:{' '}
         <span class="fail-chip">4</span> = fallida. Un toque más con 0 la deja vacía.
       </p>
-      <WorkoutEditor workout={w} settings={store.settings} history={store.history} live onChange={store.updateActive} />
+      <WorkoutEditor workout={w} settings={store.settings} history={store.history} live onChange={store.updateActive} onTechnique={store.openTechnique} />
       <div class="actions">
         <button class="danger" onClick={cancel}>
           Descartar
@@ -86,12 +86,12 @@ function ActiveWorkout({ store }: { store: Store }) {
           Terminar
         </button>
       </div>
-      {w.rest && <RestTimer now={now} rest={w.rest} onSkip={() => store.updateActive({ ...w, rest: undefined })} />}
     </>
   );
 }
 
-function RestTimer({ now, rest, onSkip }: { now: number; rest: Rest; onSkip(): void }) {
+export function RestTimer({ rest, onSkip }: { rest: Rest; onSkip(): void }) {
+  const now = useNow();
   const elapsed = (now - rest.startedAt) / 1000;
   const total = rest.extendedSec ?? rest.durationSec;
   const ready = elapsed >= rest.durationSec;

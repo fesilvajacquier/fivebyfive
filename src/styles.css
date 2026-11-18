@@ -581,3 +581,22 @@ main {
   border: 1.5px solid var(--fail);
   color: var(--fail);
 }
+
+.links {
+  display: flex;
+  justify-content: space-between;
+}
+
+.faq {
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq p {
+  margin: 8px 0 0;
+}
